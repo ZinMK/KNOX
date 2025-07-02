@@ -1,0 +1,6 @@
+*
+!.gitignore
+!lib/
+!lib/**
+
+lib/firebase_options.dart
