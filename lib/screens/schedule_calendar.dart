@@ -40,14 +40,29 @@ class _TodayAppointmentsPageState extends State<TodayAppointmentsPage> {
   int _selectedIndex = 0; // Start with Today's view selected
 
   DateTime selectedDate = DateTime.now();
-  DateTime today = DateTime.now();
+  late DateTime today;
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.twoWeeks;
   PageController pagectrl = PageController();
 
+  // Define calendar date range
+  late final DateTime firstDay;
+  late final DateTime lastDay;
+
   @override
   void initState() {
     super.initState();
+    // Initialize dates to ensure they're within valid range
+    final now = DateTime.now();
+    today = now;
+    firstDay = DateTime(now.year - 1, 1, 1); // Start from previous year
+    lastDay = DateTime(now.year + 2, 12, 31); // End 2 years from now
+    // Ensure today is within the valid range
+    if (today.isBefore(firstDay)) {
+      today = firstDay;
+    } else if (today.isAfter(lastDay)) {
+      today = lastDay;
+    }
     _fetchAppointments();
   }
 
@@ -130,10 +145,25 @@ class _TodayAppointmentsPageState extends State<TodayAppointmentsPage> {
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    // Ensure dates are within valid range
+    DateTime validFocusedDay = focusedDay;
+    if (validFocusedDay.isBefore(firstDay)) {
+      validFocusedDay = firstDay;
+    } else if (validFocusedDay.isAfter(lastDay)) {
+      validFocusedDay = lastDay;
+    }
+
+    DateTime validSelectedDay = selectedDay;
+    if (validSelectedDay.isBefore(firstDay)) {
+      validSelectedDay = firstDay;
+    } else if (validSelectedDay.isAfter(lastDay)) {
+      validSelectedDay = lastDay;
+    }
+
     setState(() {
-      _selectedDay = selectedDay;
-      selectedDate = selectedDay;
-      today = focusedDay;
+      _selectedDay = validSelectedDay;
+      selectedDate = validSelectedDay;
+      today = validFocusedDay;
     });
     _fetchAppointments();
   }
@@ -297,219 +327,240 @@ class _TodayAppointmentsPageState extends State<TodayAppointmentsPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(10),
-        child:
-            _selectedIndex == 3
-                ? (_leads.isEmpty
-                    ? Center(child: Text('No leads found.'))
-                    : ListView.builder(
-                      itemCount: _leads.length,
-                      itemBuilder: (context, index) {
-                        return LeadsCard(lead: _leads[index]);
-                      },
-                    ))
-                : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Card(
-                      elevation: 4,
-                      shadowColor: Colors.black,
-                      color: Colors.white,
-                      child: TableCalendar(
-                        headerStyle: HeaderStyle(
-                          titleTextStyle: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 23,
-                          ),
-                          titleCentered: true,
-                          leftChevronIcon: Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.black,
-                          ),
-                          rightChevronIcon: Icon(
-                            Icons.arrow_forward_ios_outlined,
-                            color: Colors.black,
-                          ),
-                        ),
-                        calendarStyle: CalendarStyle(
-                          selectedDecoration: BoxDecoration(
-                            color: const Color.fromARGB(173, 0, 187, 255),
-                            shape: BoxShape.circle,
-                          ),
-                          selectedTextStyle: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          canMarkersOverflow: false,
-                          isTodayHighlighted: true,
-                          todayTextStyle: GoogleFonts.poppins(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          defaultTextStyle: GoogleFonts.poppins(),
-                          markersMaxCount: 3,
-                          markerDecoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          markerMargin: EdgeInsets.symmetric(horizontal: 0.3),
-                        ),
-                        rowHeight: 45,
-                        focusedDay: today,
-                        onDaySelected: _onDaySelected,
-                        availableGestures: AvailableGestures.all,
-                        availableCalendarFormats: {
-                          CalendarFormat.twoWeeks: '2 weeks',
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child:
+              _selectedIndex == 3
+                  ? (_leads.isEmpty
+                      ? Center(child: Text('No leads found.'))
+                      : ListView.builder(
+                        itemCount: _leads.length,
+                        itemBuilder: (context, index) {
+                          return LeadsCard(lead: _leads[index]);
                         },
-                        calendarFormat: CalendarFormat.twoWeeks,
-                        onFormatChanged: (format) {
-                          setState(() {
-                            _calendarFormat = format;
-                          });
-                        },
-                        firstDay: DateTime(2025),
-                        lastDay: DateTime.utc(2026),
-                        selectedDayPredicate:
-                            (day) => isSameDay(day, selectedDate),
-                        eventLoader: _getAppointmentsForDay,
-                        onPageChanged: (focusedDay) {
-                          setState(() {
-                            today = focusedDay;
-                          });
-                          _fetchAppointments();
-                        },
-                        calendarBuilders: CalendarBuilders(
-                          markerBuilder: (context, date, events) {
-                            if (events.isEmpty) return null;
-
-                            Color dotColor;
-                            if (events.length >= 3) {
-                              dotColor = Colors.orange;
-                            } else if (events.length == 2) {
-                              dotColor = Colors.yellow;
-                            } else {
-                              dotColor = Colors.blue;
-                            }
-
-                            return Positioned(
-                              bottom: 8,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: List.generate(
-                                  events.length > 3 ? 3 : events.length,
-                                  (index) => Container(
-                                    width: 6,
-                                    height: 6,
-                                    margin: EdgeInsets.symmetric(
-                                      horizontal: 0.3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: dotColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
+                      ))
+                  : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Card(
+                        elevation: 4,
+                        shadowColor: Colors.black,
+                        color: const Color.fromARGB(255, 248, 248, 248),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.2,
+                          ),
+                          child: TableCalendar(
+                            headerStyle: HeaderStyle(
+                              titleTextStyle: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 23,
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(10, 5, 0, 0),
-                      child: Text(
-                        () {
-                          final today = DateTime.now();
-                          final difference =
-                              selectedDate.difference(today).inDays;
-                          final formattedDate = DateFormat.MMMMd().format(
-                            selectedDate,
-                          );
+                              titleCentered: true,
+                              leftChevronIcon: Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.black,
+                              ),
+                              rightChevronIcon: Icon(
+                                Icons.arrow_forward_ios_outlined,
+                                color: Colors.black,
+                              ),
+                            ),
+                            calendarStyle: CalendarStyle(
+                              selectedDecoration: BoxDecoration(
+                                color: const Color.fromARGB(173, 0, 187, 255),
+                                shape: BoxShape.circle,
+                              ),
+                              selectedTextStyle: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              canMarkersOverflow: false,
+                              isTodayHighlighted: true,
+                              todayTextStyle: GoogleFonts.poppins(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              defaultTextStyle: GoogleFonts.poppins(),
+                              markersMaxCount: 3,
+                              markerDecoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                              markerMargin: EdgeInsets.symmetric(
+                                horizontal: 0.3,
+                              ),
+                            ),
+                            rowHeight: 45,
+                            focusedDay: today,
+                            onDaySelected: _onDaySelected,
+                            availableGestures: AvailableGestures.all,
+                            availableCalendarFormats: {
+                              CalendarFormat.twoWeeks: '2 weeks',
+                            },
+                            calendarFormat: CalendarFormat.twoWeeks,
+                            onFormatChanged: (format) {
+                              setState(() {
+                                _calendarFormat = format;
+                              });
+                            },
+                            firstDay: firstDay,
+                            lastDay: lastDay,
+                            selectedDayPredicate:
+                                (day) => isSameDay(day, selectedDate),
+                            eventLoader: _getAppointmentsForDay,
+                            onPageChanged: (focusedDay) {
+                              // Ensure focusedDay stays within valid range
+                              DateTime validFocusedDay = focusedDay;
+                              if (validFocusedDay.isBefore(firstDay)) {
+                                validFocusedDay = firstDay;
+                              } else if (validFocusedDay.isAfter(lastDay)) {
+                                validFocusedDay = lastDay;
+                              }
+                              setState(() {
+                                today = validFocusedDay;
+                              });
+                              _fetchAppointments();
+                            },
+                            calendarBuilders: CalendarBuilders(
+                              markerBuilder: (context, date, events) {
+                                if (events.isEmpty) return null;
 
-                          if (difference > 0) {
-                            return 'Appointments for $formattedDate (in $difference days)';
-                          } else if (difference == 0) {
-                            return 'Appointments for $formattedDate';
-                          } else {
-                            return 'Appointments for $formattedDate';
-                          }
-                        }(),
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child:
-                          _isLoading
-                              ? Center(child: CircularProgressIndicator())
-                              : appointments.isEmpty
-                              ? Center(
-                                child: Text(
-                                  'No appointments for selected day.',
-                                  style: GoogleFonts.inter(color: Colors.grey),
-                                ),
-                              )
-                              : ListView.builder(
-                                itemCount: appointments.length,
-                                itemBuilder: (context, index) {
-                                  AppointmentModel appointment =
-                                      appointments[index];
-                                  return Dismissible(
-                                    key: Key(
-                                      appointment.id ?? 'appointment-$index',
-                                    ),
-                                    background: Container(
-                                      color: Colors.red,
-                                      alignment: Alignment.centerRight,
-                                      padding: EdgeInsets.only(right: 20),
-                                      child: Icon(
-                                        Icons.delete,
-                                        color: Colors.white,
+                                Color dotColor;
+                                if (events.length >= 3) {
+                                  dotColor = Colors.orange;
+                                } else if (events.length == 2) {
+                                  dotColor = Colors.yellow;
+                                } else {
+                                  dotColor = Colors.blue;
+                                }
+
+                                return Positioned(
+                                  bottom: 8,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: List.generate(
+                                      events.length > 3 ? 3 : events.length,
+                                      (index) => Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: EdgeInsets.symmetric(
+                                          horizontal: 0.3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: dotColor,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
                                     ),
-                                    direction: DismissDirection.endToStart,
-                                    confirmDismiss: (direction) async {
-                                      return await showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text("Confirm"),
-                                            content: Text(
-                                              "Are you sure you want to delete this appointment?",
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.of(
-                                                      context,
-                                                    ).pop(false),
-                                                child: Text("CANCEL"),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(10, 5, 0, 0),
+                        child: Text(
+                          () {
+                            final today = DateTime.now();
+                            final difference =
+                                selectedDate.difference(today).inDays;
+                            final formattedDate = DateFormat.MMMMd().format(
+                              selectedDate,
+                            );
+
+                            if (difference > 0) {
+                              return 'Appointments for $formattedDate (in $difference days)';
+                            } else if (difference == 0) {
+                              return 'Appointments for $formattedDate';
+                            } else {
+                              return 'Appointments for $formattedDate';
+                            }
+                          }(),
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child:
+                            _isLoading
+                                ? Center(child: CircularProgressIndicator())
+                                : appointments.isEmpty
+                                ? Center(
+                                  child: Text(
+                                    'No appointments for selected day.',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                                : ListView.builder(
+                                  itemCount: appointments.length,
+                                  itemBuilder: (context, index) {
+                                    AppointmentModel appointment =
+                                        appointments[index];
+                                    return Dismissible(
+                                      key: Key(
+                                        appointment.id ?? 'appointment-$index',
+                                      ),
+                                      background: Container(
+                                        color: Colors.red,
+                                        alignment: Alignment.centerRight,
+                                        padding: EdgeInsets.only(right: 20),
+                                        child: Icon(
+                                          Icons.delete,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      direction: DismissDirection.endToStart,
+                                      confirmDismiss: (direction) async {
+                                        return await showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: Text("Confirm"),
+                                              content: Text(
+                                                "Are you sure you want to delete this appointment?",
                                               ),
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.of(
-                                                      context,
-                                                    ).pop(true),
-                                                child: Text("DELETE"),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    },
-                                    onDismissed: (direction) {
-                                      _removeAppointment(appointment);
-                                    },
-                                    child: AppointmentCards(appt: appointment),
-                                  );
-                                },
-                              ),
-                    ),
-                  ],
-                ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        context,
+                                                      ).pop(false),
+                                                  child: Text("CANCEL"),
+                                                ),
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        context,
+                                                      ).pop(true),
+                                                  child: Text("DELETE"),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      onDismissed: (direction) {
+                                        _removeAppointment(appointment);
+                                      },
+                                      child: AppointmentCards(
+                                        appt: appointment,
+                                      ),
+                                    );
+                                  },
+                                ),
+                      ),
+                    ],
+                  ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 97, 191, 241),

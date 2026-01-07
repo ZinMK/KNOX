@@ -1,6 +1,45 @@
+# Ignore everything by default
 *
 !.gitignore
+!README.md
+!KnoxScreenshots.png
+
+# Allow lib folder
 !lib/
 !lib/**
 
+# Exclude sensitive files
 lib/firebase_options.dart
+*.env
+.env
+.env.local
+.env.*.local
+
+# Exclude build files
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+*.log
+
+# Exclude platform-specific build files
+android/app/build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+web/
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Exclude Firebase config (should be generated locally)
+firebase.json

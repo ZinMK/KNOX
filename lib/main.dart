@@ -7,7 +7,7 @@ import 'package:knox/screens/LoginPage.dart';
 import 'package:knox/screens/SingUpPage.dart';
 import 'package:knox/screens/schedule_calendar.dart';
 import 'package:knox/screens/splashScreen.dart';
-import 'firebase_options.dart'; // This file is auto-generated when you configure Firebase
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
               );
             } else if (snapshot.hasData) {
               // User is logged in
-              return SplashScreen();
+              return SplashScreen(key: key);
             } else {
               // User is NOT logged in
               return LoginPage();
